@@ -91,3 +91,18 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// 使用者程式呼叫 trace(mask)，會把 mask 放進 a0
+// ecall 切進 kernel，syscall() 根據 a7 找到對應的 sys_trace
+// sys_trace 用 argint(0, &mask) 把 a0 的內容讀出來
+uint64
+sys_trace(void)
+{
+  int mask;
+  argint(0, &mask); // argint(index, *int) 是 xv6 提供的函式，從 user stack 讀取傳進來的參數
+  if (mask < 0)
+    return -1;
+
+  myproc() -> tracemask = mask;
+  return 0;
+}

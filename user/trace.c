@@ -27,3 +27,17 @@ main(int argc, char *argv[])
   printf("trace: exec failed\n");
   exit(0);
 }
+
+// user/trace.c -> 呼叫 trace(32)
+//        ↓
+// user/user.h -> 宣告 int trace(int)
+//        ↓
+// user/usys.pl -> 加入 entry("trace")，Makefile 自動產生 user/usys.S
+//        ↓
+// user/usys.S -> 組語 stub，呼叫 ecall
+//        ↓
+// kernel/syscall.h -> 加入 SYS_trace = XX
+//        ↓
+// kernel/syscall.c -> 加入對應 case 和 sys_trace()
+//        ↓
+// kernel/sysproc.c -> 實作 uint64 sys_trace()

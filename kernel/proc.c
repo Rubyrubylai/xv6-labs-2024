@@ -312,6 +312,10 @@ fork(void)
 
   pid = np->pid;
 
+  // p 是 parent 的 struct proc*，np 是 child 的
+  // 把 parent 的 trace mask 複製給 child
+  np->tracemask = p->tracemask;
+
   release(&np->lock);
 
   acquire(&wait_lock);
