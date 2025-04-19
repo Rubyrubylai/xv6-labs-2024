@@ -8,8 +8,8 @@
 start:
         la a0, init
         la a1, argv
-        li a7, SYS_exec
-        ecall
+        li a7, SYS_exec # 將系統呼叫編號放入 a7，a7 是用來存放 syscall 號碼的暫存器（根據 syscall.h，#define SYS_exec 7）
+        ecall # 讓 CPU 產生 trap，跳入 kernel 模式。kernel 會讀取 a7 的值，判斷使用者要執行哪個 syscall（如 exec）
 
 # for(;;) exit();
 exit:
