@@ -34,10 +34,10 @@ uservec:
         # each process has a separate p->trapframe memory area,
         # but it's mapped to the same virtual address
         # (TRAPFRAME) in every process's user page table.
-        li a0, TRAPFRAME
+        li a0, TRAPFRAME # 把 Trapframe 的記憶體位址(常數值)載入到 a0 暫存器
         
         # save the user registers in TRAPFRAME
-        sd ra, 40(a0)
+        sd ra, 40(a0) # 把 ra 暫存器的值儲存到 a0 + 40 所指向的記憶體位置中
         sd sp, 48(a0)
         sd gp, 56(a0)
         sd tp, 64(a0)
@@ -144,7 +144,7 @@ userret:
         ld t6, 280(a0)
 
 	# restore user a0
-        ld a0, 112(a0)
+        ld a0, 112(a0) # 它讓 user mode 重新獲得「系統呼叫的回傳值」
         
         # return to user mode and user pc.
         # usertrapret() set up sstatus and sepc.

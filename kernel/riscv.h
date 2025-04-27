@@ -59,7 +59,7 @@ r_sstatus()
 static inline void 
 w_sstatus(uint64 x)
 {
-  asm volatile("csrw sstatus, %0" : : "r" (x));
+  asm volatile("csrw sstatus, %0" : : "r" (x)); // csrw: 把值寫入指定的控制暫存器
 }
 
 // Supervisor Interrupt Pending

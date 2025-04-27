@@ -134,11 +134,11 @@ syscall(void)
   int num;
   struct proc *p = myproc();
 
-  num = p->trapframe->a7;
+  num = p->trapframe->a7; // 在一開始 initCode.S 時，a7 存放系統呼叫編號
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
-    p->trapframe->a0 = syscalls[num]();
+    p->trapframe->a0 = syscalls[num](); // 把 system call 的回傳值 寫到 p->trapframe->a0 (習慣上函式的回傳值會放到 a0 暫存器中)
   } else {
     printf("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);

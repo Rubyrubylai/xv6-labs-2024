@@ -419,7 +419,7 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 
   while(got_null == 0 && max > 0){
     va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
+    pa0 = walkaddr(pagetable, va0); // 呼叫 walkaddr，去 user 的 pagetable 裡找，把 srcva 轉成物理位址 pa0
     if(pa0 == 0)
       return -1;
     n = PGSIZE - (srcva - va0);

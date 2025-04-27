@@ -43,7 +43,7 @@ usertrap(void)
 
   // send interrupts and exceptions to kerneltrap(),
   // since we're now in the kernel.
-  w_stvec((uint64)kernelvec);
+  w_stvec((uint64)kernelvec); // 讓在 kernel 的 trap 被 kernelvec 處理
 
   struct proc *p = myproc();
   
@@ -58,7 +58,9 @@ usertrap(void)
 
     // sepc points to the ecall instruction,
     // but we want to return to the next instruction.
-    p->trapframe->epc += 4;
+    // 發生 system call 時，CPU 會把當時的 program counter (pc) 保存到 sepc 這個暫存器裡，sepc 裡保存的是「ecall 那一行指令本身的位址」
+    // 等 system call 處理完，要回到 user code 繼續執行的時候，如果直接用 sepc 回去，就會再次執行 ecall
+    p->trapframe->epc += 4; // 每條指令大小是 4 bytes，加 4 就可以讓 pc 從 ecall 跳到下一條指令
 
     // an interrupt will change sepc, scause, and sstatus,
     // so enable only now that we're done with those registers.
@@ -73,12 +75,12 @@ usertrap(void)
     setkilled(p);
   }
 
-  if(killed(p))
-    exit(-1);
+  if(killed(p)) // 檢查 process 有沒有被 kill
+    exit(-1); // 結束 process
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
-    yield();
+  if(which_dev == 2) // 檢查需不需要讓出記憶體
+    yield(); // 讓出 CPU，排程下一個 process
 
   usertrapret();
 }
@@ -98,7 +100,7 @@ usertrapret(void)
 
   // send syscalls, interrupts, and exceptions to uservec in trampoline.S
   uint64 trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
-  w_stvec(trampoline_uservec);
+  w_stvec(trampoline_uservec); // 把 stvec 設定成 uservec 的位址，這樣下次如果 user 再發生 trap，CPU 知道要跳回 uservec
 
   // set up trapframe values that uservec will need when
   // the process next traps into the kernel.
@@ -117,7 +119,7 @@ usertrapret(void)
   w_sstatus(x);
 
   // set S Exception Program Counter to the saved user pc.
-  w_sepc(p->trapframe->epc);
+  w_sepc(p->trapframe->epc); // 把 trap 時保存的 user 原本的 program counter 存回 sepc，這樣 sret 後能正確回到原本 user 執行的位置
 
   // tell trampoline.S the user page table to switch to.
   uint64 satp = MAKE_SATP(p->pagetable);
@@ -125,7 +127,7 @@ usertrapret(void)
   // jump to userret in trampoline.S at the top of memory, which 
   // switches to the user page table, restores user registers,
   // and switches to user mode with sret.
-  uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
+  uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline); // 呼叫 userret，userret 是一段在 trampoline 頁面的組合語言程式碼，負責執行 sret 回 user mode
   ((void (*)(uint64))trampoline_userret)(satp);
 }
 
@@ -156,7 +158,7 @@ kerneltrap()
 
   // the yield() may have caused some traps to occur,
   // so restore trap registers for use by kernelvec.S's sepc instruction.
-  w_sepc(sepc);
+  w_sepc(sepc); // 把一開始保存的「正確的 sepc」和「正確的 sstatus」寫回去，這樣 CPU 才知道 trap 前是在跑哪裡，mode 是什麼
   w_sstatus(sstatus);
 }
 

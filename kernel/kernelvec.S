@@ -14,7 +14,7 @@ kernelvec:
         addi sp, sp, -256
 
         # save caller-saved registers.
-        sd ra, 0(sp)
+        sd ra, 0(sp) # 推入 32 個暫存器到目前的 stack
         sd sp, 8(sp)
         sd gp, 16(sp)
         sd tp, 24(sp)
@@ -38,7 +38,7 @@ kernelvec:
         call kerneltrap
 
         # restore registers.
-        ld ra, 0(sp)
+        ld ra, 0(sp) # 把 stack 上保存的 32 個暫存器 pop 回來
         ld sp, 8(sp)
         ld gp, 16(sp)
         # not tp (contains hartid), in case we moved CPUs
@@ -61,4 +61,4 @@ kernelvec:
         addi sp, sp, 256
 
         # return to whatever we were doing in the kernel.
-        sret
+        sret # 把 sepc 指定的位址放回 pc，CPU 重新跳回 trap 發生時的那一條 kernel code，繼續執行
