@@ -132,6 +132,14 @@ found:
     return 0;
   }
 
+  // 呼叫 kalloc() 向 kernel 記憶體 allocator 請求分配一頁，然後把回傳的指針轉型成 struct usyscall* 型別，存進 p->usc
+  // 如果 kalloc() 失敗（回傳 0），表示分配失敗
+  if((p->usc = (struct usyscall *)kalloc()) == 0){
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
+
   // An empty user page table.
   p->pagetable = proc_pagetable(p);
   if(p->pagetable == 0){
@@ -158,6 +166,9 @@ freeproc(struct proc *p)
   if(p->trapframe)
     kfree((void*)p->trapframe);
   p->trapframe = 0;
+  if(p->usc)
+    kfree((void*)p->usc); // 把 p->usc 指向的記憶體釋放回 kernel allocator
+  p->usc = 0; // 把指標設成 0（NULL），避免之後不小心再次使用這個已經被釋放的指標
   if(p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
   p->pagetable = 0;
@@ -202,6 +213,15 @@ proc_pagetable(struct proc *p)
     return 0;
   }
 
+  // 把一頁實體記憶體（p->usc），映射到虛擬位址 USYSCALL，且設定權限為 user 可讀
+  // 如果失敗，回傳 -1
+  if(mappages(pagetable, USYSCALL, PGSIZE,
+              (uint64)(p->usc), PTE_R | PTE_U) < 0){
+    uvmunmap(pagetable, TRAPFRAME, 1, 0); // 把之前 map 好的 TRAPFRAME 頁面解除 mapping
+    uvmfree(pagetable, 0); // 直接 free 掉 pagetable
+    return 0;
+  }
+
   return pagetable;
 }
 
@@ -212,6 +232,7 @@ proc_freepagetable(pagetable_t pagetable, uint64 sz)
 {
   uvmunmap(pagetable, TRAMPOLINE, 1, 0);
   uvmunmap(pagetable, TRAPFRAME, 1, 0);
+  uvmunmap(pagetable, USYSCALL, 1, 0);
   uvmfree(pagetable, sz);
 }
 
@@ -245,6 +266,8 @@ userinit(void)
   // prepare for the very first "return" from kernel to user.
   p->trapframe->epc = 0;      // user program counter
   p->trapframe->sp = PGSIZE;  // user stack pointer
+
+  p->usc->pid = p->pid;
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -301,6 +324,9 @@ fork(void)
 
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
+
+  *(np->usc) = *(p->usc); // 把 p->usc 的內容整個拷貝到 np->usc，是值拷貝
+  np->usc->pid = np->pid; // 把新的 child process 的 pid 寫到自己的 usc 裡
 
   // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)

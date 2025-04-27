@@ -63,7 +63,7 @@
 //   TRAMPOLINE (the same page as in the kernel)
 #define TRAPFRAME (TRAMPOLINE - PGSIZE)
 #ifdef LAB_PGTBL
-#define USYSCALL (TRAPFRAME - PGSIZE)
+#define USYSCALL (TRAPFRAME - PGSIZE) // 定義一個虛擬記憶體的地址，這個地址是比 TRAPFRAME 再往下 1 頁（PGSIZE）的位置
 
 struct usyscall {
   int pid;  // Process ID
