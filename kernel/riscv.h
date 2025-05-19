@@ -288,7 +288,7 @@ r_time()
 static inline void
 intr_on()
 {
-  w_sstatus(r_sstatus() | SSTATUS_SIE);
+  w_sstatus(r_sstatus() | SSTATUS_SIE); // 設置 SSTATUS 暫存器，打開中斷標誌位
 }
 
 // disable device interrupts

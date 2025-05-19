@@ -12,7 +12,7 @@ __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 
 // entry.S jumps here in machine mode on stack0.
 void
-start()
+start()  // 將所有中斷都設置在 Supervisor Mode
 {
   // set M Previous Privilege mode to Supervisor, for mret.
   unsigned long x = r_mstatus();
@@ -30,7 +30,7 @@ start()
   // delegate all interrupts and exceptions to supervisor mode.
   w_medeleg(0xffff);
   w_mideleg(0xffff);
-  w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
+  w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE); // 設置 SIE 暫存器來接收外部、軟件和定時器中斷
 
   // configure Physical Memory Protection to give supervisor mode
   // access to all of physical memory.

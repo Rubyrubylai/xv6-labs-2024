@@ -442,7 +442,7 @@ wait(uint64 addr)
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
 void
-scheduler(void)
+scheduler(void) // 運行進程
 {
   struct proc *p;
   struct cpu *c = mycpu();
@@ -452,7 +452,7 @@ scheduler(void)
     // The most recent process to run may have had interrupts
     // turned off; enable them to avoid a deadlock if all
     // processes are waiting.
-    intr_on();
+    intr_on();  // 使 CPU能接收中斷
 
     int found = 0;
     for(p = proc; p < &proc[NPROC]; p++) {

@@ -49,6 +49,9 @@ extern volatile int panicked; // from printf.c
 
 void uartstart();
 
+// 設定 UART 芯片，使其可以被使用
+// 當 UART 接收一個字元時，觸發一個「接收中斷」
+// 當 UART 傳送完一個字元時，觸發一個「傳送完成中斷」
 void
 uartinit(void)
 {
