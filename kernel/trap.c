@@ -78,7 +78,7 @@ usertrap(void)
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)
-    yield();
+    yield(); // 實現「時間分割多工」，讓每個 runnable process 都能分到 CPU 時間
 
   usertrapret();
 }
@@ -165,7 +165,7 @@ clockintr()
 {
   if(cpuid() == 0){
     acquire(&tickslock);
-    ticks++;
+    ticks++; // ticks 是全域變數，紀錄系統啟動後經過的時間（以中斷次數計）。每次 clock 中斷，代表過了某個固定時間（如 0.1 秒）
     wakeup(&ticks);
     release(&tickslock);
   }
@@ -190,7 +190,7 @@ devintr()
     // this is a supervisor external interrupt, via PLIC.
 
     // irq indicates which device interrupted.
-    int irq = plic_claim();
+    int irq = plic_claim(); // 詢問 PLIC 是哪個裝置產生中斷
 
     if(irq == UART0_IRQ){
       uartintr();

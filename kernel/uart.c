@@ -19,8 +19,8 @@
 // some have different meanings for
 // read vs write.
 // see http://byterunner.com/16550.html
-#define RHR 0                 // receive holding register (for input bytes)
-#define THR 0                 // transmit holding register (for output bytes)
+#define RHR 0                 // receive holding register (for input bytes) 讀取輸入的字元
+#define THR 0                 // transmit holding register (for output bytes) 寫入輸出的字元
 #define IER 1                 // interrupt enable register
 #define IER_RX_ENABLE (1<<0)
 #define IER_TX_ENABLE (1<<1)
@@ -28,7 +28,7 @@
 #define FCR_FIFO_ENABLE (1<<0)
 #define FCR_FIFO_CLEAR (3<<1) // clear the content of the two FIFOs
 #define ISR 2                 // interrupt status register
-#define LCR 3                 // line control register
+#define LCR 3                 // line control register 狀態暫存器，告知是否可以讀/寫
 #define LCR_EIGHT_BITS (3<<0)
 #define LCR_BAUD_LATCH (1<<7) // special mode to set baud rate
 #define LSR 5                 // line status register
@@ -95,14 +95,14 @@ uartputc(int c)
     for(;;)
       ;
   }
-  while(uart_tx_w == uart_tx_r + UART_TX_BUF_SIZE){
+  while(uart_tx_w == uart_tx_r + UART_TX_BUF_SIZE){ // 如果緩衝區 uart_tx_buf 滿了（裝不下更多要傳的字元），uartputc 會暫時 block，等待空間釋放
     // buffer is full.
     // wait for uartstart() to open up space in the buffer.
     sleep(&uart_tx_r, &uart_tx_lock);
   }
-  uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE] = c;
+  uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE] = c; // 把字元加到 uart_tx_buf
   uart_tx_w += 1;
-  uartstart();
+  uartstart(); // 呼叫 uartstart()，嘗試啟動傳送
   release(&uart_tx_lock);
 }
 
@@ -180,11 +180,11 @@ void
 uartintr(void)
 {
   // read and process incoming characters.
-  while(1){
+  while(1){ // 從 UART 的接收 FIFO 中讀取所有「等待中的字元」
     int c = uartgetc();
     if(c == -1)
       break;
-    consoleintr(c);
+    consoleintr(c); // 呼叫 consoleintr() 將這些字元交給 console 處理
   }
 
   // send buffered characters.

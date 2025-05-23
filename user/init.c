@@ -17,7 +17,7 @@ main(void)
   int pid, wpid;
 
   if(open("console", O_RDWR) < 0){
-    mknod("console", CONSOLE, 0);
+    mknod("console", CONSOLE, 0); // 打開 console 檔案描述符（stdin = fd 0）。read() 系統呼叫發生時，最終會呼叫 consoleread() 來處理
     open("console", O_RDWR);
   }
   dup(0);  // stdout

@@ -88,15 +88,15 @@ consoleread(int user_dst, uint64 dst, int n)
   while(n > 0){
     // wait until interrupt handler has put some
     // input into cons.buffer.
-    while(cons.r == cons.w){
+    while(cons.r == cons.w){ // 「等待」使用者輸入一整行文字
       if(killed(myproc())){
         release(&cons.lock);
         return -1;
       }
-      sleep(&cons.r, &cons.lock);
+      sleep(&cons.r, &cons.lock); // 如果目前還沒輸入完整一行，進程會呼叫 sleep()，進入休眠
     }
 
-    c = cons.buf[cons.r++ % INPUT_BUF_SIZE];
+    c = cons.buf[cons.r++ % INPUT_BUF_SIZE]; // 輸入會由中斷觸發、儲存在 緩衝區 cons.buf
 
     if(c == C('D')){  // end-of-file
       if(n < target){
@@ -137,7 +137,7 @@ consoleintr(int c)
 {
   acquire(&cons.lock);
 
-  switch(c){
+  switch(c){ // 把每個輸入字元依序存進 cons.buf
   case C('P'):  // Print process list.
     procdump();
     break;
@@ -145,7 +145,7 @@ consoleintr(int c)
     while(cons.e != cons.w &&
           cons.buf[(cons.e-1) % INPUT_BUF_SIZE] != '\n'){
       cons.e--;
-      consputc(BACKSPACE);
+      consputc(BACKSPACE); // 處理特殊字元（如 backspace, Ctrl+U）
     }
     break;
   case C('H'): // Backspace
@@ -165,11 +165,11 @@ consoleintr(int c)
       // store for consumption by consoleread().
       cons.buf[cons.e++ % INPUT_BUF_SIZE] = c;
 
-      if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE){
+      if(c == '\n' || c == C('D') || cons.e-cons.r == INPUT_BUF_SIZE){ // 當發現換行字元 '\n' 時，代表使用者輸入完成了一行
         // wake up consoleread() if a whole line (or end-of-file)
         // has arrived.
         cons.w = cons.e;
-        wakeup(&cons.r);
+        wakeup(&cons.r); // 喚醒正在等待 consoleread() 的進程
       }
     }
     break;

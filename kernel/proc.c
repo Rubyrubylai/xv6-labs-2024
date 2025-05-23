@@ -576,7 +576,7 @@ sleep(void *chan, struct spinlock *lk)
 // Wake up all processes sleeping on chan.
 // Must be called without any p->lock.
 void
-wakeup(void *chan)
+wakeup(void *chan) // 記錄該 process 是「為了等待什麼資源」而睡著
 {
   struct proc *p;
 
