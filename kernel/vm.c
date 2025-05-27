@@ -488,9 +488,36 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 
 
 #ifdef LAB_PGTBL
+// 葉子節點：若 PTE_R、PTE_W 或 PTE_X 中任一 bit 為 1，表示這是一個有效的頁面映射
+// 非葉子節點：如果 R/W/X 權限都為 0，但 PTE_V 有設，則表示這個 PTE 指向的是下一層 page table
+void
+pteprint(pagetable_t pagetable, int level) {
+  // pagetable 是指向一個 含有 512 個 PTE 的陣列
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){ // 從整數 pte 中取出它的第 0 bit 是否為 1，用來判斷「這筆頁表項是否有效」
+      printf("..");
+      for(int j=0;j<level;j++){
+        printf(" ..");
+      }
+      uint64 va = i << PXSHIFT(level);
+      uint64 pa = PTE2PA(pte);
+      printf("%p: pte %p pa %p\n", (uint64 *)va, (uint64 *)pte, (uint64 *)pa);
+
+      // 如果不是葉子節點
+      if((pte & (PTE_R|PTE_W|PTE_X)) == 0){
+        uint64 child = PTE2PA(pte);
+        pteprint((pagetable_t)child,level+1);
+      }
+    }
+  }
+}
+
 void
 vmprint(pagetable_t pagetable) {
   // your code here
+  printf("page table %p\n", pagetable);
+  pteprint(pagetable, 0);
 }
 #endif
 
