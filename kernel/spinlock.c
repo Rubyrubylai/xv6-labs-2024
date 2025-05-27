@@ -70,9 +70,13 @@ acquire(struct spinlock *lk)
 #endif      
 
   // On RISC-V, sync_lock_test_and_set turns into an atomic swap:
-  //   a5 = 1
-  //   s1 = &lk->locked
+  //   a5 = 1   把數值 1 放入暫存器 a5，代表「我要持有這把鎖」
+  //   s1 = &lk->locked   設定 register s1 為鎖的記憶體位址，也就是鎖變數的地址（這是我們要操作的記憶體位置）
   //   amoswap.w.aq a5, a5, (s1)
+  //   交換 a5 和 s1 的值
+  //   1. 從 s1 指的記憶體（lk->locked）讀出值
+  //   2. 把 a5 = 1 寫進該記憶體（表示鎖被我持有）
+  //   3. 把原本記憶體的值放回 a5
   while(__sync_lock_test_and_set(&lk->locked, 1) != 0) {
 #ifdef LAB_LOCK
     __sync_fetch_and_add(&(lk->nts), 1);

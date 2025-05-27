@@ -545,7 +545,7 @@ forkret(void)
 // Atomically release lock and sleep on chan.
 // Reacquires lock when awakened.
 void
-sleep(void *chan, struct spinlock *lk)
+sleep(void *chan, struct spinlock *lk) // lk 是進入 sleep() 前持有的某個共享資源的鎖，可能是某個 buffer lock、file lock、管道 lock 等
 {
   struct proc *p = myproc();
   

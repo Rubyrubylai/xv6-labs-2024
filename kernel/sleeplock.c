@@ -22,10 +22,10 @@ void
 acquiresleep(struct sleeplock *lk)
 {
   acquire(&lk->lk);
-  while (lk->locked) {
+  while (lk->locked) { // 別人持有 lock
     sleep(lk, &lk->lk);
   }
-  lk->locked = 1;
+  lk->locked = 1; // 自己上 lock
   lk->pid = myproc()->pid;
   release(&lk->lk);
 }
