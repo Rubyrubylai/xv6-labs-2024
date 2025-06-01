@@ -64,7 +64,7 @@ procinit(void)
 int
 cpuid()
 {
-  int id = r_tp();
+  int id = r_tp(); // 從 tp 暫存器取得 hartid
   return id;
 }
 
@@ -503,7 +503,7 @@ sched(void)
     panic("sched interruptible");
 
   intena = mycpu()->intena;
-  swtch(&p->context, &mycpu()->context);
+  swtch(&p->context, &mycpu()->context); // 從 process 的 context → 切換到 scheduler 的 context
   mycpu()->intena = intena;
 }
 

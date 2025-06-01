@@ -76,7 +76,7 @@ uservec:
         ld sp, 8(a0)
 
         # make tp hold the current hartid, from p->trapframe->kernel_hartid
-        ld tp, 32(a0)
+        ld tp, 32(a0) # 從 trapframe 中把正確的 tp 還原
 
         # load the address of usertrap(), from p->trapframe->kernel_trap
         ld t0, 16(a0)
