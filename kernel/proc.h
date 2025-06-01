@@ -22,7 +22,7 @@ struct context {
 struct cpu {
   struct proc *proc;          // The process running on this cpu, or null.
   struct context context;     // swtch() here to enter scheduler().
-  int noff;                   // Depth of push_off() nesting.
+  int noff;                   // Depth of push_off() nesting. 記錄 nested spinlock 次數，用於判斷是否該開啟中斷
   int intena;                 // Were interrupts enabled before push_off()?
 };
 
