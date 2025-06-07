@@ -85,14 +85,14 @@ pipewrite(struct pipe *pi, uint64 addr, int n)
       release(&pi->lock);
       return -1;
     }
-    if(pi->nwrite == pi->nread + PIPESIZE){ //DOC: pipewrite-full
-      wakeup(&pi->nread);
-      sleep(&pi->nwrite, &pi->lock);
+    if(pi->nwrite == pi->nread + PIPESIZE){ //DOC: pipewrite-full buffer 滿了，無法繼續寫入
+      wakeup(&pi->nread); // 喚醒任何可能在等待讀的 process
+      sleep(&pi->nwrite, &pi->lock); // 釋放鎖並進入睡眠，等待 reader 讀走一些資料
     } else {
       char ch;
       if(copyin(pr->pagetable, &ch, addr + i, 1) == -1)
         break;
-      pi->data[pi->nwrite++ % PIPESIZE] = ch;
+      pi->data[pi->nwrite++ % PIPESIZE] = ch; // 寫入資料到 buffer
       i++;
     }
   }
@@ -110,21 +110,21 @@ piperead(struct pipe *pi, uint64 addr, int n)
   char ch;
 
   acquire(&pi->lock);
-  while(pi->nread == pi->nwrite && pi->writeopen){  //DOC: pipe-empty
+  while(pi->nread == pi->nwrite && pi->writeopen){  //DOC: pipe-empty 使用 while 是為了避免虛假喚醒。被喚醒的多個 reader 中只有一個成功讀到資料，其他發現還是沒資料就會再睡回去
     if(killed(pr)){
       release(&pi->lock);
       return -1;
     }
-    sleep(&pi->nread, &pi->lock); //DOC: piperead-sleep
+    sleep(&pi->nread, &pi->lock); //DOC: piperead-sleep 如果空的，睡覺
   }
   for(i = 0; i < n; i++){  //DOC: piperead-copy
     if(pi->nread == pi->nwrite)
       break;
-    ch = pi->data[pi->nread++ % PIPESIZE];
-    if(copyout(pr->pagetable, addr + i, &ch, 1) == -1)
+    ch = pi->data[pi->nread++ % PIPESIZE]; // 將 buffer 中的資料一個一個讀出來，更新 nread
+    if(copyout(pr->pagetable, addr + i, &ch, 1) == -1) // 將資料從 kernel space 複製到 user space
       break;
   }
-  wakeup(&pi->nwrite);  //DOC: piperead-wakeup
+  wakeup(&pi->nwrite);  //DOC: piperead-wakeup 喚醒任何在 &pi->nwrite 上睡眠的 process
   release(&pi->lock);
   return i;
 }
