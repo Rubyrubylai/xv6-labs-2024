@@ -351,7 +351,7 @@ exit(int status)
   if(p == initproc)
     panic("init exiting");
 
-  // Close all open files.
+  // Close all open files. 關閉所有打開的檔案
   for(int fd = 0; fd < NOFILE; fd++){
     if(p->ofile[fd]){
       struct file *f = p->ofile[fd];
@@ -360,14 +360,15 @@ exit(int status)
     }
   }
 
+  // 釋放目前目錄
   begin_op();
-  iput(p->cwd);
+  iput(p->cwd); // 遞減目前工作目錄 inode 的引用計數（若為 0 則釋放）
   end_op();
   p->cwd = 0;
 
   acquire(&wait_lock);
 
-  // Give any children to init.
+  // Give any children to init. 把所有 child 的 parent 改為 initproc（pid 1），避免成為孤兒
   reparent(p);
 
   // Parent might be sleeping in wait().
@@ -375,8 +376,8 @@ exit(int status)
   
   acquire(&p->lock);
 
-  p->xstate = status;
-  p->state = ZOMBIE;
+  p->xstate = status; // 記錄 exit status → 儲存在 p->xstate，讓 wait(&status) 可以取用
+  p->state = ZOMBIE; // 設為 ZOMBIE 狀態 → 表示 process 結束，但還沒被 parent 回收
 
   release(&wait_lock);
 
@@ -400,21 +401,21 @@ wait(uint64 addr)
     // Scan through table looking for exited children.
     havekids = 0;
     for(pp = proc; pp < &proc[NPROC]; pp++){
-      if(pp->parent == p){
+      if(pp->parent == p){ // 尋找我自己的 child
         // make sure the child isn't still in exit() or swtch().
         acquire(&pp->lock);
 
         havekids = 1;
-        if(pp->state == ZOMBIE){
+        if(pp->state == ZOMBIE){ // 尋找 ZOMBIE
           // Found one.
           pid = pp->pid;
           if(addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
-                                  sizeof(pp->xstate)) < 0) {
+                                  sizeof(pp->xstate)) < 0) { // 複製它的 exit status（pp->xstate）到 wait(status) 的參數位置（如果不是 null）
             release(&pp->lock);
             release(&wait_lock);
             return -1;
           }
-          freeproc(pp);
+          freeproc(pp); // 將該 child 的 proc 結構標記為 UNUSED。被 parent 回收後才釋放的資源（例如記憶體頁表）
           release(&pp->lock);
           release(&wait_lock);
           return pid;
@@ -430,7 +431,7 @@ wait(uint64 addr)
     }
     
     // Wait for a child to exit.
-    sleep(p, &wait_lock);  //DOC: wait-sleep
+    sleep(p, &wait_lock);  //DOC: wait-sleep 這個 parent process 暫時睡眠，直到某個 child 呼叫 wakeup(p->parent) 才會醒來
   }
 }
 
